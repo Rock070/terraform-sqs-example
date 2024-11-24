@@ -40,23 +40,31 @@ resource "aws_iam_role_policy" "lambda_policy" {
         ],
         Effect   = "Allow",
         Resource = "arn:aws:logs:*:*:*"
+      },
+      {
+        Action = [
+          "sns:Publish",
+        ],
+        Effect   = "Allow",
+        Resource = aws_sns_topic.sns_topic.arn
       }
     ]
   })
 }
 
-# 创建 Lambda 函数
 resource "aws_lambda_function" "example_lambda" {
   filename         = "functions/lambda-sqs/dist-zip/lambda-sqs.zip" # 提前打包的 Lambda ZIP
   function_name    = "example-lambda"
   role             = aws_iam_role.lambda_execution_role.arn
   handler          = "lambda-sqs.handler"
-  runtime          = "nodejs20.x"         
+  timeout          = 30
+  runtime          = "nodejs20.x"
   source_code_hash = filebase64sha256("functions/lambda-sqs/dist-zip/lambda-sqs.zip")
 
   environment {
     variables = {
       SQS_QUEUE_URL = aws_sqs_queue.main_queue.id
+      SNS_TOPIC_ARN = aws_sns_topic.sns_topic.arn
     }
   }
 }

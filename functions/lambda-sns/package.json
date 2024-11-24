@@ -1,5 +1,5 @@
 {
-  "name": "lambda-sqs",
+  "name": "lambda-sns",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -14,8 +14,8 @@
     "vite-plugin-zip-pack": "^1.2.4"
   },
   "dependencies": {
-    "@aws-sdk/client-sns": "^3.699.0",
     "@aws-sdk/client-sqs": "^3.693.0",
-    "@types/node": "^22.9.0"
+    "@types/node": "^22.9.0",
+    "axios": "^1.7.7"
   }
 }

@@ -1,9 +1,9 @@
 import { SQSClient, ReceiveMessageCommand, DeleteMessageCommand } from "@aws-sdk/client-sqs";
+import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 
 type MessageBody = {
   message: string
 }
-
 
 const sqsClient = new SQSClient({ region: "us-west-2" });
 
@@ -19,8 +19,6 @@ export async function handler(): Promise<void> {
         WaitTimeSeconds: 10,
       })
     );
-
-    console.log("🚀 ~ handler ~ receiveMessageResult:", receiveMessageResult, typeof receiveMessageResult)
 
     const messages = receiveMessageResult.Messages!
 
@@ -46,7 +44,9 @@ export async function handler(): Promise<void> {
     } else {
       console.log("No messages to process.");
     }
+    await notify('成功')
   } catch (error) {
+    await notify(error)
     console.error("Error receiving messages from SQS:", error);
   }
 }
@@ -65,3 +65,34 @@ async function deleteMessage(receiptHandle: string, queueUrl: string) {
     throw error;
   }
 }
+
+
+const notify = async (event: any): Promise<void> => {
+  const snsClient = new SNSClient({ region: "us-west-2" });
+
+  try {
+      console.log("Received event:", JSON.stringify(event, null, 2));
+
+      // 處理邏輯
+      const processedResult = `處理完成，輸入為：${JSON.stringify(event)}`;
+
+      // 發送到 SNS 主題
+      const topicArn = process.env.SNS_TOPIC_ARN; // 確保配置環境變數
+      if (!topicArn) {
+          throw new Error("SNS_TOPIC_ARN 環境變數未設定");
+      }
+
+      const publishCommand = new PublishCommand({
+          TopicArn: topicArn,
+          Message: processedResult,
+      });
+
+      const response = await snsClient.send(publishCommand);
+
+      console.log("成功發送訊息到 SNS:", processedResult);
+      console.log("SNS Response:", response);
+  } catch (error) {
+      console.error("處理或發送至 SNS 時發生錯誤:", error);
+      throw error;
+  }
+};
